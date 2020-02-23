@@ -1,0 +1,390 @@
+---
+title: "Project 1: Data Analysis"
+author: "Thoams Hill"
+date: "February, 23, 2020"
+output: html_document
+---
+
+# Loading the Initial Data Set
+
+The initial data set is available as a .txt file, and displays a lot of data per player in a small amount of space. In addition to player demographics and pre-tournament statistics, there are also entries for the activity of each round. The player's opponent, designated by the pair number, as well as letters indicating whether the round was a win, loss, draw, or bide. The cells have pipes and hyphens as boundaries.
+
+
+```{r tournament-info-txt}
+library(tidyr)
+library(dplyr)
+library(stringr)
+tournament_orig <- read.csv("https://raw.githubusercontent.com/hillt5/DATA607_Project_1/master/tournamentinfo.txt",header = FALSE, sep = "|", )
+head(tournament_orig$V2,30)
+class(tournament_orig)
+names(tournament_orig)
+```
+
+After importing the table, it's clear that much of the formatting in the the original .txt isn't allowing a neat conversion into a data frame. I ultimately separated the data into columns by separating by pipe or "|" character.
+
+
+# Exploring the First Column
+
+The first column contains all of the hyphens left over from the original .txt, in addition to Pair Number and state initials. I created a new column populated with numbers 1 through 64 and extracted all two-letter entries into a second column for player initials.
+
+```{r V1-explore}
+library(tidyr)
+library(dplyr)
+head(tournament_orig$V1,15)
+Player_ID <- as.vector(c(1:64))
+player_state <- as.vector(str_trim(str_subset(tournament_orig$V1, pattern = "([A-Z])([A-Z])")))
+Player_ID
+player_state
+```
+
+#Exploring the Second Column
+
+The second column contains a lot of infromation personal to each player, including their name and pre-post tournament score. I started off by separating out all of the names, which conveniently were all capitalized. I also ignored the top columns which were just headers in the original file.
+
+```{r V2-explore}
+head(tournament_orig$V2)
+player_name <- str_subset(tournament_orig$V2, pattern = "([A-Z])([A-Z])")
+player_name2 <- as.vector(str_trim(player_name[-1]))
+print(player_name2)
+```
+
+Next, I collected the pre-scores from the second column. Since there were several numbers in each entry, including USCF ID#, pre- and post-score, I came up with a regex expression that extracted only the pre-score based around the surrounding "R:" and "->" formatting. I then trimmed off the empty cells and whitespace.
+
+```{r V2-pre-rating}
+head(tournament_orig$V2,30)
+pre_score <- str_extract(tournament_orig$V2, pattern = "R: ([0-9])([0-9]).*->|R:  ([0-9])([0-9]).*->")
+pre_score_clean1 <- str_trim(str_extract_all(pre_score, pattern = "([0-9])([0-9])([0-9])+"))
+pre_score_clean2 <- as.vector(as.numeric(str_subset(pre_score_clean1, pattern = ".+")))
+pre_score_clean2
+```
+
+# Third Column
+
+The third column was pretty straightforward as it only contained the total points. 
+
+```{r V3-explore}
+total_points <- as.vector(as.numeric(str_subset(tournament_orig$V3, pattern = "^([0-9])")))
+total_points
+```
+
+# The Remaining Columns
+
+The remaining columns contain a lot of different observations of interest, but what I'm interested for the purposes of this project is the opposing player identity. Each remaining column is broken down by rounds 1-7. It's important that each of the final vectors contains 64 entries for each of the 64 players. Some of the players had bide rounds or were disqualfied, in which case there is no opposing player data available.
+
+My strategy for extracting all of the opponent information was subsetting each column by filtering again for only entries containing numerical data. This left several columns containing only whitespace, which correspond to the bide or round after disqualification. It was important to maintain these, so I assiged the corresponding white space to "NA". I then removed any non-numeric characters from the player identity cells.
+
+```{r V4-explore}
+tail(tournament_orig$V4,15)
+round_1_values <- str_subset(tournament_orig$V4, pattern = "     |([0-9]$)")
+round_1_plus_na <- str_replace_all(round_1_values, "     ", "NA")
+round_1_clean <- as.vector(as.numeric(str_trim(str_replace_all(round_1_plus_na, "W|L|D", ""))))
+round_1_clean
+length(round_1_clean)
+```
+
+I repeated the same technique for the six remaining columns.
+
+```{r V5-explore}
+tail(tournament_orig$V5)
+round_2_values <- str_subset(tournament_orig$V5, pattern = "     |([0-9]$)")
+round_2_plus_na <- str_replace_all(round_2_values, "     ", "NA")
+round_2_clean <- as.vector(as.numeric(str_trim(str_replace_all(round_2_plus_na, "W|L|D", ""))))
+round_2_clean
+```
+
+```{r V6-explore}
+tail(tournament_orig$V6)
+round_3_values <- str_subset(tournament_orig$V6, pattern = "     |([0-9]$)")
+round_3_plus_na <- str_replace_all(round_3_values, "     ", "NA")
+round_3_clean <- as.vector(as.numeric(str_trim(str_replace_all(round_3_plus_na, "W|L|D", ""))))
+round_3_clean
+```
+
+```{r V7-explore}
+tail(tournament_orig$V7)
+round_4_values <- str_subset(tournament_orig$V7, pattern = "     |([0-9]$)")
+round_4_plus_na <- str_replace_all(round_4_values, "     ", "NA")
+round_4_clean <- as.vector(as.numeric(str_trim(str_replace_all(round_4_plus_na, "W|L|D", ""))))
+round_4_clean
+```
+
+```{r V8-explore}
+tail(tournament_orig$V8)
+round_5_values <- str_subset(tournament_orig$V8, pattern = "     |([0-9]$)")
+round_5_plus_na <- str_replace_all(round_5_values, "     ", "NA")
+round_5_clean <- as.vector(as.numeric(str_trim(str_replace_all(round_5_plus_na, "W|L|D", ""))))
+round_5_clean
+```
+
+```{r V9-explore}
+tail(tournament_orig$V9)
+round_6_values <- str_subset(tournament_orig$V9, pattern = "     |([0-9]$)")
+round_6_plus_na <- str_replace_all(round_6_values, "     ", "NA")
+round_6_clean <- as.vector(as.numeric(str_trim(str_replace_all(round_6_plus_na, "W|L|D", ""))))
+round_6_clean
+```
+
+```{r V10-explore}
+tail(tournament_orig$V10)
+round_7_values <- str_subset(tournament_orig$V10, pattern = "     |([0-9]$)")
+round_7_plus_na <- str_replace_all(round_7_values, "     ", "NA")
+round_7_clean <- as.vector(as.numeric(str_trim(str_replace_all(round_7_plus_na, "W|L|D", ""))))
+round_7_clean
+```
+
+# Collecting all of the Preiliminary Observations in a New Data Frame
+
+To help myself visually confirm that all of the observations matched up, I created a preiliminary dataframe with all of the columns so far. 
+
+```{r prelim-tournament-df}
+
+tournament_clean <- data.frame(Player_ID, player_name2, player_state, total_points, pre_score_clean2, round_1_clean, round_2_clean, round_3_clean, round_4_clean, round_5_clean, round_6_clean, round_7_clean)
+
+names(tournament_clean) <- c("Player ID", "Players Name", "Players State/Province", "Total Number of Points", "Players Pre-Rating", "Round 1 Opp.", "Round 2 Opp.", "Round 3 Opp.", "Round 4 Opp.", "Round 5 Opp.", "Round 6 Opp.", "Round 7 Opp.")
+```
+
+# Calculating the Average Opponent Rating
+
+As part of the project, the only value not immediately available is the average opponent rating, which is used by taking the pre-ratings of all opponents faced by a player in this seven-round tournament. To calculate this, I used the "Round # Opponent" columns to point to the corresponding player's pre-tournament score. I then calcualted the average using the entries of all seven columns, including "na.rm = TRUE", to not count the "NA" columns towards the denominator of calculating the average. 
+
+Unfortunately, at this point my lack of experience in R started showing. Ideally, I would have written something like a 'for' loop to iterate through all 64 players in a single bit of code. Instead, I used some brute force find + replace, then copy + paste to do all 64 lines individually. This didn't take as long as expected as all I had to do was generate the first 10 iterations, then use find + replace to replace "[1]...[9]" with "[10]...[19]", etc. This method would be wholly unacceptable for larger datasets. There's also a very real possibility for human error and typographical errors contributing to inaccurate calculations.
+
+```{r avg-oppo-rating-brute-force}
+
+avg_oppo_rating <- as.vector(1:64) 
+
+avg_oppo_rating[1] <-mean(c(pre_score_clean2[Player_ID[round_1_clean[1]]], pre_score_clean2[Player_ID[round_2_clean[1]]], pre_score_clean2[Player_ID[round_3_clean[1]]], pre_score_clean2[Player_ID[round_4_clean[1]]], pre_score_clean2[Player_ID[round_5_clean[1]]], pre_score_clean2[Player_ID[round_6_clean[1]]], pre_score_clean2[Player_ID[round_7_clean[1]]]), na.rm = TRUE) 
+
+  
+
+avg_oppo_rating[2] <-mean(c(pre_score_clean2[Player_ID[round_1_clean[2]]], pre_score_clean2[Player_ID[round_2_clean[2]]], pre_score_clean2[Player_ID[round_3_clean[2]]], pre_score_clean2[Player_ID[round_4_clean[2]]], pre_score_clean2[Player_ID[round_5_clean[2]]], pre_score_clean2[Player_ID[round_6_clean[2]]], pre_score_clean2[Player_ID[round_7_clean[2]]]), na.rm = TRUE)                                                                                                
+
+avg_oppo_rating[3] <-mean(c(pre_score_clean2[Player_ID[round_1_clean[3]]], pre_score_clean2[Player_ID[round_2_clean[3]]], pre_score_clean2[Player_ID[round_3_clean[3]]], pre_score_clean2[Player_ID[round_4_clean[3]]], pre_score_clean2[Player_ID[round_5_clean[3]]], pre_score_clean2[Player_ID[round_6_clean[3]]], pre_score_clean2[Player_ID[round_7_clean[3]]]), na.rm = TRUE)  
+
+  
+
+avg_oppo_rating[4] <-mean(c(pre_score_clean2[Player_ID[round_1_clean[4]]], pre_score_clean2[Player_ID[round_2_clean[4]]], pre_score_clean2[Player_ID[round_3_clean[4]]], pre_score_clean2[Player_ID[round_4_clean[4]]], pre_score_clean2[Player_ID[round_5_clean[4]]], pre_score_clean2[Player_ID[round_6_clean[4]]], pre_score_clean2[Player_ID[round_7_clean[4]]]), na.rm = TRUE)  
+
+                                                                                               
+
+avg_oppo_rating[5] <-mean(c(pre_score_clean2[Player_ID[round_1_clean[5]]], pre_score_clean2[Player_ID[round_2_clean[5]]], pre_score_clean2[Player_ID[round_3_clean[5]]], pre_score_clean2[Player_ID[round_4_clean[5]]], pre_score_clean2[Player_ID[round_5_clean[5]]], pre_score_clean2[Player_ID[round_6_clean[5]]], pre_score_clean2[Player_ID[round_7_clean[5]]]), na.rm = TRUE)  
+
+  
+
+avg_oppo_rating[6] <-mean(c(pre_score_clean2[Player_ID[round_1_clean[6]]], pre_score_clean2[Player_ID[round_2_clean[6]]], pre_score_clean2[Player_ID[round_3_clean[6]]], pre_score_clean2[Player_ID[round_4_clean[6]]], pre_score_clean2[Player_ID[round_5_clean[6]]], pre_score_clean2[Player_ID[round_6_clean[6]]], pre_score_clean2[Player_ID[round_7_clean[6]]]), na.rm = TRUE)  
+
+  
+
+avg_oppo_rating[7] <-mean(c(pre_score_clean2[Player_ID[round_1_clean[7]]], pre_score_clean2[Player_ID[round_2_clean[7]]], pre_score_clean2[Player_ID[round_3_clean[7]]], pre_score_clean2[Player_ID[round_4_clean[7]]], pre_score_clean2[Player_ID[round_5_clean[7]]], pre_score_clean2[Player_ID[round_6_clean[7]]], pre_score_clean2[Player_ID[round_7_clean[7]]]), na.rm = TRUE)  
+
+  
+
+avg_oppo_rating[8] <-mean(c(pre_score_clean2[Player_ID[round_1_clean[8]]], pre_score_clean2[Player_ID[round_2_clean[8]]], pre_score_clean2[Player_ID[round_3_clean[8]]], pre_score_clean2[Player_ID[round_4_clean[8]]], pre_score_clean2[Player_ID[round_5_clean[8]]], pre_score_clean2[Player_ID[round_6_clean[8]]], pre_score_clean2[Player_ID[round_7_clean[8]]]), na.rm = TRUE)  
+
+  
+
+avg_oppo_rating[9] <-mean(c(pre_score_clean2[Player_ID[round_1_clean[9]]], pre_score_clean2[Player_ID[round_2_clean[9]]], pre_score_clean2[Player_ID[round_3_clean[9]]], pre_score_clean2[Player_ID[round_4_clean[9]]], pre_score_clean2[Player_ID[round_5_clean[9]]], pre_score_clean2[Player_ID[round_6_clean[9]]], pre_score_clean2[Player_ID[round_7_clean[9]]]), na.rm = TRUE)  
+
+  
+
+avg_oppo_rating[10] <-mean(c(pre_score_clean2[Player_ID[round_1_clean[10]]], pre_score_clean2[Player_ID[round_2_clean[10]]], pre_score_clean2[Player_ID[round_3_clean[10]]], pre_score_clean2[Player_ID[round_4_clean[10]]], pre_score_clean2[Player_ID[round_5_clean[10]]], pre_score_clean2[Player_ID[round_6_clean[10]]], pre_score_clean2[Player_ID[round_7_clean[10]]]), na.rm = TRUE)  
+
+  
+
+avg_oppo_rating[11] <-mean(c(pre_score_clean2[Player_ID[round_1_clean[11]]], pre_score_clean2[Player_ID[round_2_clean[11]]], pre_score_clean2[Player_ID[round_3_clean[11]]], pre_score_clean2[Player_ID[round_4_clean[11]]], pre_score_clean2[Player_ID[round_5_clean[11]]], pre_score_clean2[Player_ID[round_6_clean[11]]], pre_score_clean2[Player_ID[round_7_clean[11]]]), na.rm = TRUE)  
+
+  
+
+avg_oppo_rating[12] <-mean(c(pre_score_clean2[Player_ID[round_1_clean[12]]], pre_score_clean2[Player_ID[round_2_clean[12]]], pre_score_clean2[Player_ID[round_3_clean[12]]], pre_score_clean2[Player_ID[round_4_clean[12]]], pre_score_clean2[Player_ID[round_5_clean[12]]], pre_score_clean2[Player_ID[round_6_clean[12]]], pre_score_clean2[Player_ID[round_7_clean[12]]]), na.rm = TRUE)                                                                                                 
+
+  
+
+avg_oppo_rating[13] <-mean(c(pre_score_clean2[Player_ID[round_1_clean[13]]], pre_score_clean2[Player_ID[round_2_clean[13]]], pre_score_clean2[Player_ID[round_3_clean[13]]], pre_score_clean2[Player_ID[round_4_clean[13]]], pre_score_clean2[Player_ID[round_5_clean[13]]], pre_score_clean2[Player_ID[round_6_clean[13]]], pre_score_clean2[Player_ID[round_7_clean[13]]]), na.rm = TRUE)   
+
+  
+
+avg_oppo_rating[14] <-mean(c(pre_score_clean2[Player_ID[round_1_clean[14]]], pre_score_clean2[Player_ID[round_2_clean[14]]], pre_score_clean2[Player_ID[round_3_clean[14]]], pre_score_clean2[Player_ID[round_4_clean[14]]], pre_score_clean2[Player_ID[round_5_clean[14]]], pre_score_clean2[Player_ID[round_6_clean[14]]], pre_score_clean2[Player_ID[round_7_clean[14]]]), na.rm = TRUE)                                                         
+
+avg_oppo_rating[15] <-mean(c(pre_score_clean2[Player_ID[round_1_clean[15]]], pre_score_clean2[Player_ID[round_2_clean[15]]], pre_score_clean2[Player_ID[round_3_clean[15]]], pre_score_clean2[Player_ID[round_4_clean[15]]], pre_score_clean2[Player_ID[round_5_clean[15]]], pre_score_clean2[Player_ID[round_6_clean[15]]], pre_score_clean2[Player_ID[round_7_clean[15]]]), na.rm = TRUE)   
+
+  
+
+avg_oppo_rating[16] <-mean(c(pre_score_clean2[Player_ID[round_1_clean[16]]], pre_score_clean2[Player_ID[round_2_clean[16]]], pre_score_clean2[Player_ID[round_3_clean[16]]], pre_score_clean2[Player_ID[round_4_clean[16]]], pre_score_clean2[Player_ID[round_5_clean[16]]], pre_score_clean2[Player_ID[round_6_clean[16]]], pre_score_clean2[Player_ID[round_7_clean[16]]]), na.rm = TRUE)   
+
+  
+
+avg_oppo_rating[17] <-mean(c(pre_score_clean2[Player_ID[round_1_clean[17]]], pre_score_clean2[Player_ID[round_2_clean[17]]], pre_score_clean2[Player_ID[round_3_clean[17]]], pre_score_clean2[Player_ID[round_4_clean[17]]], pre_score_clean2[Player_ID[round_5_clean[17]]], pre_score_clean2[Player_ID[round_6_clean[17]]], pre_score_clean2[Player_ID[round_7_clean[17]]]), na.rm = TRUE)   
+
+  
+
+avg_oppo_rating[18] <-mean(c(pre_score_clean2[Player_ID[round_1_clean[18]]], pre_score_clean2[Player_ID[round_2_clean[18]]], pre_score_clean2[Player_ID[round_3_clean[18]]], pre_score_clean2[Player_ID[round_4_clean[18]]], pre_score_clean2[Player_ID[round_5_clean[18]]], pre_score_clean2[Player_ID[round_6_clean[18]]], pre_score_clean2[Player_ID[round_7_clean[18]]]), na.rm = TRUE)   
+
+  
+
+avg_oppo_rating[19] <-mean(c(pre_score_clean2[Player_ID[round_1_clean[19]]], pre_score_clean2[Player_ID[round_2_clean[19]]], pre_score_clean2[Player_ID[round_3_clean[19]]], pre_score_clean2[Player_ID[round_4_clean[19]]], pre_score_clean2[Player_ID[round_5_clean[19]]], pre_score_clean2[Player_ID[round_6_clean[19]]], pre_score_clean2[Player_ID[round_7_clean[19]]]), na.rm = TRUE)   
+
+  
+
+avg_oppo_rating[20] <-mean(c(pre_score_clean2[Player_ID[round_1_clean[20]]], pre_score_clean2[Player_ID[round_2_clean[20]]], pre_score_clean2[Player_ID[round_3_clean[20]]], pre_score_clean2[Player_ID[round_4_clean[20]]], pre_score_clean2[Player_ID[round_5_clean[20]]], pre_score_clean2[Player_ID[round_6_clean[20]]], pre_score_clean2[Player_ID[round_7_clean[20]]]), na.rm = TRUE)  
+
+  
+
+avg_oppo_rating[21] <-mean(c(pre_score_clean2[Player_ID[round_1_clean[21]]], pre_score_clean2[Player_ID[round_2_clean[21]]], pre_score_clean2[Player_ID[round_3_clean[21]]], pre_score_clean2[Player_ID[round_4_clean[21]]], pre_score_clean2[Player_ID[round_5_clean[21]]], pre_score_clean2[Player_ID[round_6_clean[21]]], pre_score_clean2[Player_ID[round_7_clean[21]]]), na.rm = TRUE)  
+
+  
+
+avg_oppo_rating[22] <-mean(c(pre_score_clean2[Player_ID[round_1_clean[22]]], pre_score_clean2[Player_ID[round_2_clean[22]]], pre_score_clean2[Player_ID[round_3_clean[22]]], pre_score_clean2[Player_ID[round_4_clean[22]]], pre_score_clean2[Player_ID[round_5_clean[22]]], pre_score_clean2[Player_ID[round_6_clean[22]]], pre_score_clean2[Player_ID[round_7_clean[22]]]), na.rm = TRUE)                                                                                                 
+
+  
+
+avg_oppo_rating[23] <-mean(c(pre_score_clean2[Player_ID[round_1_clean[23]]], pre_score_clean2[Player_ID[round_2_clean[23]]], pre_score_clean2[Player_ID[round_3_clean[23]]], pre_score_clean2[Player_ID[round_4_clean[23]]], pre_score_clean2[Player_ID[round_5_clean[23]]], pre_score_clean2[Player_ID[round_6_clean[23]]], pre_score_clean2[Player_ID[round_7_clean[23]]]), na.rm = TRUE)   
+
+  
+
+avg_oppo_rating[24] <-mean(c(pre_score_clean2[Player_ID[round_1_clean[24]]], pre_score_clean2[Player_ID[round_2_clean[24]]], pre_score_clean2[Player_ID[round_3_clean[24]]], pre_score_clean2[Player_ID[round_4_clean[24]]], pre_score_clean2[Player_ID[round_5_clean[24]]], pre_score_clean2[Player_ID[round_6_clean[24]]], pre_score_clean2[Player_ID[round_7_clean[24]]]), na.rm = TRUE)                                                         
+
+avg_oppo_rating[25] <-mean(c(pre_score_clean2[Player_ID[round_1_clean[25]]], pre_score_clean2[Player_ID[round_2_clean[25]]], pre_score_clean2[Player_ID[round_3_clean[25]]], pre_score_clean2[Player_ID[round_4_clean[25]]], pre_score_clean2[Player_ID[round_5_clean[25]]], pre_score_clean2[Player_ID[round_6_clean[25]]], pre_score_clean2[Player_ID[round_7_clean[25]]]), na.rm = TRUE)   
+
+  
+
+avg_oppo_rating[26] <-mean(c(pre_score_clean2[Player_ID[round_1_clean[26]]], pre_score_clean2[Player_ID[round_2_clean[26]]], pre_score_clean2[Player_ID[round_3_clean[26]]], pre_score_clean2[Player_ID[round_4_clean[26]]], pre_score_clean2[Player_ID[round_5_clean[26]]], pre_score_clean2[Player_ID[round_6_clean[26]]], pre_score_clean2[Player_ID[round_7_clean[26]]]), na.rm = TRUE)   
+
+  
+
+avg_oppo_rating[27] <-mean(c(pre_score_clean2[Player_ID[round_1_clean[27]]], pre_score_clean2[Player_ID[round_2_clean[27]]], pre_score_clean2[Player_ID[round_3_clean[27]]], pre_score_clean2[Player_ID[round_4_clean[27]]], pre_score_clean2[Player_ID[round_5_clean[27]]], pre_score_clean2[Player_ID[round_6_clean[27]]], pre_score_clean2[Player_ID[round_7_clean[27]]]), na.rm = TRUE)   
+
+  
+
+avg_oppo_rating[28] <-mean(c(pre_score_clean2[Player_ID[round_1_clean[28]]], pre_score_clean2[Player_ID[round_2_clean[28]]], pre_score_clean2[Player_ID[round_3_clean[28]]], pre_score_clean2[Player_ID[round_4_clean[28]]], pre_score_clean2[Player_ID[round_5_clean[28]]], pre_score_clean2[Player_ID[round_6_clean[28]]], pre_score_clean2[Player_ID[round_7_clean[28]]]), na.rm = TRUE)   
+
+  
+
+avg_oppo_rating[29] <-mean(c(pre_score_clean2[Player_ID[round_1_clean[29]]], pre_score_clean2[Player_ID[round_2_clean[29]]], pre_score_clean2[Player_ID[round_3_clean[29]]], pre_score_clean2[Player_ID[round_4_clean[29]]], pre_score_clean2[Player_ID[round_5_clean[29]]], pre_score_clean2[Player_ID[round_6_clean[29]]], pre_score_clean2[Player_ID[round_7_clean[29]]]), na.rm = TRUE)   
+
+  
+
+  avg_oppo_rating[30] <-mean(c(pre_score_clean2[Player_ID[round_1_clean[30]]], pre_score_clean2[Player_ID[round_2_clean[30]]], pre_score_clean2[Player_ID[round_3_clean[30]]], pre_score_clean2[Player_ID[round_4_clean[30]]], pre_score_clean2[Player_ID[round_5_clean[30]]], pre_score_clean2[Player_ID[round_6_clean[30]]], pre_score_clean2[Player_ID[round_7_clean[30]]]), na.rm = TRUE)  
+
+  
+
+avg_oppo_rating[31] <-mean(c(pre_score_clean2[Player_ID[round_1_clean[31]]], pre_score_clean2[Player_ID[round_2_clean[31]]], pre_score_clean2[Player_ID[round_3_clean[31]]], pre_score_clean2[Player_ID[round_4_clean[31]]], pre_score_clean2[Player_ID[round_5_clean[31]]], pre_score_clean2[Player_ID[round_6_clean[31]]], pre_score_clean2[Player_ID[round_7_clean[31]]]), na.rm = TRUE)  
+
+  
+
+avg_oppo_rating[32] <-mean(c(pre_score_clean2[Player_ID[round_1_clean[32]]], pre_score_clean2[Player_ID[round_2_clean[32]]], pre_score_clean2[Player_ID[round_3_clean[32]]], pre_score_clean2[Player_ID[round_4_clean[32]]], pre_score_clean2[Player_ID[round_5_clean[32]]], pre_score_clean2[Player_ID[round_6_clean[32]]], pre_score_clean2[Player_ID[round_7_clean[32]]]), na.rm = TRUE)                                                                                                 
+
+  
+
+avg_oppo_rating[33] <-mean(c(pre_score_clean2[Player_ID[round_1_clean[33]]], pre_score_clean2[Player_ID[round_2_clean[33]]], pre_score_clean2[Player_ID[round_3_clean[33]]], pre_score_clean2[Player_ID[round_4_clean[33]]], pre_score_clean2[Player_ID[round_5_clean[33]]], pre_score_clean2[Player_ID[round_6_clean[33]]], pre_score_clean2[Player_ID[round_7_clean[33]]]), na.rm = TRUE)   
+
+  
+
+avg_oppo_rating[34] <-mean(c(pre_score_clean2[Player_ID[round_1_clean[34]]], pre_score_clean2[Player_ID[round_2_clean[34]]], pre_score_clean2[Player_ID[round_3_clean[34]]], pre_score_clean2[Player_ID[round_4_clean[34]]], pre_score_clean2[Player_ID[round_5_clean[34]]], pre_score_clean2[Player_ID[round_6_clean[34]]], pre_score_clean2[Player_ID[round_7_clean[34]]]), na.rm = TRUE)                                                         
+
+avg_oppo_rating[35] <-mean(c(pre_score_clean2[Player_ID[round_1_clean[35]]], pre_score_clean2[Player_ID[round_2_clean[35]]], pre_score_clean2[Player_ID[round_3_clean[35]]], pre_score_clean2[Player_ID[round_4_clean[35]]], pre_score_clean2[Player_ID[round_5_clean[35]]], pre_score_clean2[Player_ID[round_6_clean[35]]], pre_score_clean2[Player_ID[round_7_clean[35]]]), na.rm = TRUE)   
+
+  
+
+avg_oppo_rating[36] <-mean(c(pre_score_clean2[Player_ID[round_1_clean[36]]], pre_score_clean2[Player_ID[round_2_clean[36]]], pre_score_clean2[Player_ID[round_3_clean[36]]], pre_score_clean2[Player_ID[round_4_clean[36]]], pre_score_clean2[Player_ID[round_5_clean[36]]], pre_score_clean2[Player_ID[round_6_clean[36]]], pre_score_clean2[Player_ID[round_7_clean[36]]]), na.rm = TRUE)   
+
+  
+
+avg_oppo_rating[37] <-mean(c(pre_score_clean2[Player_ID[round_1_clean[37]]], pre_score_clean2[Player_ID[round_2_clean[37]]], pre_score_clean2[Player_ID[round_3_clean[37]]], pre_score_clean2[Player_ID[round_4_clean[37]]], pre_score_clean2[Player_ID[round_5_clean[37]]], pre_score_clean2[Player_ID[round_6_clean[37]]], pre_score_clean2[Player_ID[round_7_clean[37]]]), na.rm = TRUE)   
+
+  
+
+avg_oppo_rating[38] <-mean(c(pre_score_clean2[Player_ID[round_1_clean[38]]], pre_score_clean2[Player_ID[round_2_clean[38]]], pre_score_clean2[Player_ID[round_3_clean[38]]], pre_score_clean2[Player_ID[round_4_clean[38]]], pre_score_clean2[Player_ID[round_5_clean[38]]], pre_score_clean2[Player_ID[round_6_clean[38]]], pre_score_clean2[Player_ID[round_7_clean[38]]]), na.rm = TRUE)   
+
+  
+
+avg_oppo_rating[39] <-mean(c(pre_score_clean2[Player_ID[round_1_clean[39]]], pre_score_clean2[Player_ID[round_2_clean[39]]], pre_score_clean2[Player_ID[round_3_clean[39]]], pre_score_clean2[Player_ID[round_4_clean[39]]], pre_score_clean2[Player_ID[round_5_clean[39]]], pre_score_clean2[Player_ID[round_6_clean[39]]], pre_score_clean2[Player_ID[round_7_clean[39]]]), na.rm = TRUE)   
+
+  
+
+avg_oppo_rating[40] <-mean(c(pre_score_clean2[Player_ID[round_1_clean[40]]], pre_score_clean2[Player_ID[round_2_clean[40]]], pre_score_clean2[Player_ID[round_3_clean[40]]], pre_score_clean2[Player_ID[round_4_clean[40]]], pre_score_clean2[Player_ID[round_5_clean[40]]], pre_score_clean2[Player_ID[round_6_clean[40]]], pre_score_clean2[Player_ID[round_7_clean[40]]]), na.rm = TRUE)  
+
+  
+
+avg_oppo_rating[41] <-mean(c(pre_score_clean2[Player_ID[round_1_clean[41]]], pre_score_clean2[Player_ID[round_2_clean[41]]], pre_score_clean2[Player_ID[round_3_clean[41]]], pre_score_clean2[Player_ID[round_4_clean[41]]], pre_score_clean2[Player_ID[round_5_clean[41]]], pre_score_clean2[Player_ID[round_6_clean[41]]], pre_score_clean2[Player_ID[round_7_clean[41]]]), na.rm = TRUE)  
+
+  
+
+avg_oppo_rating[42] <-mean(c(pre_score_clean2[Player_ID[round_1_clean[42]]], pre_score_clean2[Player_ID[round_2_clean[42]]], pre_score_clean2[Player_ID[round_3_clean[42]]], pre_score_clean2[Player_ID[round_4_clean[42]]], pre_score_clean2[Player_ID[round_5_clean[42]]], pre_score_clean2[Player_ID[round_6_clean[42]]], pre_score_clean2[Player_ID[round_7_clean[42]]]), na.rm = TRUE)                                                                                                 
+
+  
+
+avg_oppo_rating[43] <-mean(c(pre_score_clean2[Player_ID[round_1_clean[43]]], pre_score_clean2[Player_ID[round_2_clean[43]]], pre_score_clean2[Player_ID[round_3_clean[43]]], pre_score_clean2[Player_ID[round_4_clean[43]]], pre_score_clean2[Player_ID[round_5_clean[43]]], pre_score_clean2[Player_ID[round_6_clean[43]]], pre_score_clean2[Player_ID[round_7_clean[43]]]), na.rm = TRUE)   
+
+  
+
+avg_oppo_rating[44] <-mean(c(pre_score_clean2[Player_ID[round_1_clean[44]]], pre_score_clean2[Player_ID[round_2_clean[44]]], pre_score_clean2[Player_ID[round_3_clean[44]]], pre_score_clean2[Player_ID[round_4_clean[44]]], pre_score_clean2[Player_ID[round_5_clean[44]]], pre_score_clean2[Player_ID[round_6_clean[44]]], pre_score_clean2[Player_ID[round_7_clean[44]]]), na.rm = TRUE)                                                         
+
+avg_oppo_rating[45] <-mean(c(pre_score_clean2[Player_ID[round_1_clean[45]]], pre_score_clean2[Player_ID[round_2_clean[45]]], pre_score_clean2[Player_ID[round_3_clean[45]]], pre_score_clean2[Player_ID[round_4_clean[45]]], pre_score_clean2[Player_ID[round_5_clean[45]]], pre_score_clean2[Player_ID[round_6_clean[45]]], pre_score_clean2[Player_ID[round_7_clean[45]]]), na.rm = TRUE)   
+
+  
+
+avg_oppo_rating[46] <-mean(c(pre_score_clean2[Player_ID[round_1_clean[46]]], pre_score_clean2[Player_ID[round_2_clean[46]]], pre_score_clean2[Player_ID[round_3_clean[46]]], pre_score_clean2[Player_ID[round_4_clean[46]]], pre_score_clean2[Player_ID[round_5_clean[46]]], pre_score_clean2[Player_ID[round_6_clean[46]]], pre_score_clean2[Player_ID[round_7_clean[46]]]), na.rm = TRUE)   
+
+  
+
+avg_oppo_rating[47] <-mean(c(pre_score_clean2[Player_ID[round_1_clean[47]]], pre_score_clean2[Player_ID[round_2_clean[47]]], pre_score_clean2[Player_ID[round_3_clean[47]]], pre_score_clean2[Player_ID[round_4_clean[47]]], pre_score_clean2[Player_ID[round_5_clean[47]]], pre_score_clean2[Player_ID[round_6_clean[47]]], pre_score_clean2[Player_ID[round_7_clean[47]]]), na.rm = TRUE)   
+
+  
+
+avg_oppo_rating[48] <-mean(c(pre_score_clean2[Player_ID[round_1_clean[48]]], pre_score_clean2[Player_ID[round_2_clean[48]]], pre_score_clean2[Player_ID[round_3_clean[48]]], pre_score_clean2[Player_ID[round_4_clean[48]]], pre_score_clean2[Player_ID[round_5_clean[48]]], pre_score_clean2[Player_ID[round_6_clean[48]]], pre_score_clean2[Player_ID[round_7_clean[48]]]), na.rm = TRUE)   
+
+  
+
+avg_oppo_rating[49] <-mean(c(pre_score_clean2[Player_ID[round_1_clean[49]]], pre_score_clean2[Player_ID[round_2_clean[49]]], pre_score_clean2[Player_ID[round_3_clean[49]]], pre_score_clean2[Player_ID[round_4_clean[49]]], pre_score_clean2[Player_ID[round_5_clean[49]]], pre_score_clean2[Player_ID[round_6_clean[49]]], pre_score_clean2[Player_ID[round_7_clean[49]]]), na.rm = TRUE)   
+
+  
+
+avg_oppo_rating[50] <-mean(c(pre_score_clean2[Player_ID[round_1_clean[50]]], pre_score_clean2[Player_ID[round_2_clean[50]]], pre_score_clean2[Player_ID[round_3_clean[50]]], pre_score_clean2[Player_ID[round_4_clean[50]]], pre_score_clean2[Player_ID[round_5_clean[50]]], pre_score_clean2[Player_ID[round_6_clean[50]]], pre_score_clean2[Player_ID[round_7_clean[50]]]), na.rm = TRUE)  
+
+  
+
+avg_oppo_rating[51] <-mean(c(pre_score_clean2[Player_ID[round_1_clean[51]]], pre_score_clean2[Player_ID[round_2_clean[51]]], pre_score_clean2[Player_ID[round_3_clean[51]]], pre_score_clean2[Player_ID[round_4_clean[51]]], pre_score_clean2[Player_ID[round_5_clean[51]]], pre_score_clean2[Player_ID[round_6_clean[51]]], pre_score_clean2[Player_ID[round_7_clean[51]]]), na.rm = TRUE)  
+
+  
+
+avg_oppo_rating[52] <-mean(c(pre_score_clean2[Player_ID[round_1_clean[52]]], pre_score_clean2[Player_ID[round_2_clean[52]]], pre_score_clean2[Player_ID[round_3_clean[52]]], pre_score_clean2[Player_ID[round_4_clean[52]]], pre_score_clean2[Player_ID[round_5_clean[52]]], pre_score_clean2[Player_ID[round_6_clean[52]]], pre_score_clean2[Player_ID[round_7_clean[52]]]), na.rm = TRUE)                                                                                               
+
+avg_oppo_rating[53] <-mean(c(pre_score_clean2[Player_ID[round_1_clean[53]]], pre_score_clean2[Player_ID[round_2_clean[53]]], pre_score_clean2[Player_ID[round_3_clean[53]]], pre_score_clean2[Player_ID[round_4_clean[53]]], pre_score_clean2[Player_ID[round_5_clean[53]]], pre_score_clean2[Player_ID[round_6_clean[53]]], pre_score_clean2[Player_ID[round_7_clean[53]]]), na.rm = TRUE)   
+
+
+avg_oppo_rating[54] <-mean(c(pre_score_clean2[Player_ID[round_1_clean[54]]], pre_score_clean2[Player_ID[round_2_clean[54]]], pre_score_clean2[Player_ID[round_3_clean[54]]], pre_score_clean2[Player_ID[round_4_clean[54]]], pre_score_clean2[Player_ID[round_5_clean[54]]], pre_score_clean2[Player_ID[round_6_clean[54]]], pre_score_clean2[Player_ID[round_7_clean[54]]]), na.rm = TRUE)                                                 
+avg_oppo_rating[55] <-mean(c(pre_score_clean2[Player_ID[round_1_clean[55]]], pre_score_clean2[Player_ID[round_2_clean[55]]], pre_score_clean2[Player_ID[round_3_clean[55]]], pre_score_clean2[Player_ID[round_4_clean[55]]], pre_score_clean2[Player_ID[round_5_clean[55]]], pre_score_clean2[Player_ID[round_6_clean[55]]], pre_score_clean2[Player_ID[round_7_clean[55]]]), na.rm = TRUE)   
+
+avg_oppo_rating[56] <-mean(c(pre_score_clean2[Player_ID[round_1_clean[56]]], pre_score_clean2[Player_ID[round_2_clean[56]]], pre_score_clean2[Player_ID[round_3_clean[56]]], pre_score_clean2[Player_ID[round_4_clean[56]]], pre_score_clean2[Player_ID[round_5_clean[56]]], pre_score_clean2[Player_ID[round_6_clean[56]]], pre_score_clean2[Player_ID[round_7_clean[56]]]), na.rm = TRUE)   
+
+avg_oppo_rating[57] <-mean(c(pre_score_clean2[Player_ID[round_1_clean[57]]], pre_score_clean2[Player_ID[round_2_clean[57]]], pre_score_clean2[Player_ID[round_3_clean[57]]], pre_score_clean2[Player_ID[round_4_clean[57]]], pre_score_clean2[Player_ID[round_5_clean[57]]], pre_score_clean2[Player_ID[round_6_clean[57]]], pre_score_clean2[Player_ID[round_7_clean[57]]]), na.rm = TRUE)   
+
+avg_oppo_rating[58] <-mean(c(pre_score_clean2[Player_ID[round_1_clean[58]]], pre_score_clean2[Player_ID[round_2_clean[58]]], pre_score_clean2[Player_ID[round_3_clean[58]]], pre_score_clean2[Player_ID[round_4_clean[58]]], pre_score_clean2[Player_ID[round_5_clean[58]]], pre_score_clean2[Player_ID[round_6_clean[58]]], pre_score_clean2[Player_ID[round_7_clean[58]]]), na.rm = TRUE)   
+
+avg_oppo_rating[59] <-mean(c(pre_score_clean2[Player_ID[round_1_clean[59]]], pre_score_clean2[Player_ID[round_2_clean[59]]], pre_score_clean2[Player_ID[round_3_clean[59]]], pre_score_clean2[Player_ID[round_4_clean[59]]], pre_score_clean2[Player_ID[round_5_clean[59]]], pre_score_clean2[Player_ID[round_6_clean[59]]], pre_score_clean2[Player_ID[round_7_clean[59]]]), na.rm = TRUE)   
+
+avg_oppo_rating[60] <-mean(c(pre_score_clean2[Player_ID[round_1_clean[60]]], pre_score_clean2[Player_ID[round_2_clean[60]]], pre_score_clean2[Player_ID[round_3_clean[60]]], pre_score_clean2[Player_ID[round_4_clean[60]]], pre_score_clean2[Player_ID[round_5_clean[60]]], pre_score_clean2[Player_ID[round_6_clean[60]]], pre_score_clean2[Player_ID[round_7_clean[60]]]), na.rm = TRUE)  
+
+avg_oppo_rating[61] <-mean(c(pre_score_clean2[Player_ID[round_1_clean[61]]], pre_score_clean2[Player_ID[round_2_clean[61]]], pre_score_clean2[Player_ID[round_3_clean[61]]], pre_score_clean2[Player_ID[round_4_clean[61]]], pre_score_clean2[Player_ID[round_5_clean[61]]], pre_score_clean2[Player_ID[round_6_clean[61]]], pre_score_clean2[Player_ID[round_7_clean[61]]]), na.rm = TRUE)  
+
+avg_oppo_rating[62] <-mean(c(pre_score_clean2[Player_ID[round_1_clean[62]]], pre_score_clean2[Player_ID[round_2_clean[62]]], pre_score_clean2[Player_ID[round_3_clean[62]]], pre_score_clean2[Player_ID[round_4_clean[62]]], pre_score_clean2[Player_ID[round_5_clean[62]]], pre_score_clean2[Player_ID[round_6_clean[62]]], pre_score_clean2[Player_ID[round_7_clean[62]]]), na.rm = TRUE)                                                                                                 
+
+avg_oppo_rating[63] <-mean(c(pre_score_clean2[Player_ID[round_1_clean[63]]], pre_score_clean2[Player_ID[round_2_clean[63]]], pre_score_clean2[Player_ID[round_3_clean[63]]], pre_score_clean2[Player_ID[round_4_clean[63]]], pre_score_clean2[Player_ID[round_5_clean[63]]], pre_score_clean2[Player_ID[round_6_clean[63]]], pre_score_clean2[Player_ID[round_7_clean[63]]]), na.rm = TRUE)   
+
+avg_oppo_rating[64] <-mean(c(pre_score_clean2[Player_ID[round_1_clean[64]]], pre_score_clean2[Player_ID[round_2_clean[64]]], pre_score_clean2[Player_ID[round_3_clean[64]]], pre_score_clean2[Player_ID[round_4_clean[64]]], pre_score_clean2[Player_ID[round_5_clean[64]]], pre_score_clean2[Player_ID[round_6_clean[64]]], pre_score_clean2[Player_ID[round_7_clean[64]]]), na.rm = TRUE) 
+ 
+avg_oppo_rating
+```
+
+# Putting the Final Table Together
+
+I generated the final table with all specified columns, including the newly calculated average column. Finally, I exported the data frame to a new .csv to GitHub.
+
+```{r final-table-with-average}
+tournament_final <- data.frame(player_name2, player_state, total_points, pre_score_clean2, avg_oppo_rating)
+
+names(tournament_final) <- c("Player's Name", "Player's State/Province", "Total Number of Points", "Player's Pre-Rating", "Average Pre-Tournament Rating of Opponents")
+
+dir.create("C:\\Users\\Thomas\\Documents\\GitHub\\DATA607_Project_1.csv", showWarnings=FALSE)
+write.csv(tournament_final,"C:\\Users\\Thomas\\Documents\\GitHub\\DATA607_Project_1.csv", row.names = TRUE)
+```
